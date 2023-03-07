@@ -52,8 +52,12 @@ def window_partition(x, window_size):
     Returns:
         windows: (num_windows*B, window_size, window_size, C)
     """
+    ## 此函数用于将window划分成window_size * window_size个patch
+    # 假设输入x.shape = [1, 28, 28, 96], window_size=7
     B, H, W, C = x.shape
+    # 将x形状变换成[1, 4, 7, 4, 7, 96]
     x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
+    # 将x的维度调换顺序，得到x.shape=[1, 4, 4, 7, 7, 96]，再reshape成[16, 7, 7, 96]
     windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
     return windows
 
@@ -69,8 +73,13 @@ def window_reverse(windows, window_size, H, W):
     Returns:
         x: (B, H, W, C)
     """
+    ## 此函数是`window_partition`的反过程
+    # 依旧假设输入windows.shape=[16, 7, 7, 96], H = W = 28
+    # B = int(16 / (28 * 28 / 7 / 7)) = 1
     B = int(windows.shape[0] / (H * W / window_size / window_size))
+    # 将x形状变换成[1, 28//7, 28//7, 7, 7, -1] = [1, 4, 4, 7, 7, 96]
     x = windows.view(B, H // window_size, W // window_size, window_size, window_size, -1)
+    # 将x调换维度顺序为[1, 4, 7, 4, 7, 96]再reshape成[1, 28, 28, 96]
     x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
     return x
 
